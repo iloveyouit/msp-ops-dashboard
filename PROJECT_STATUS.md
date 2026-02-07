@@ -1,12 +1,19 @@
 # MSP Ops Dashboard - Project Status
 
 **Date**: 2026-02-06  
-**Status**: Verified and Production Ready  
+**Status**: Verified Build + Active Enhancement  
 **Version**: 0.1.0
 
 ## Summary
 
-The MSP Ops Dashboard is a personal operations dashboard application for IT Infrastructure Consultants at managed service providers. The project has been fully built, verified, and tested. All setup issues have been resolved and documented. The application is production-ready with comprehensive documentation.
+The MSP Ops Dashboard is a personal operations dashboard application for IT Infrastructure Consultants at managed service providers. The current codebase is build-verified, lint-verified, and in active enhancement for the next roadmap phases.
+
+## Latest Update (2026-02-06)
+
+- Added committed ESLint config (`.eslintrc.json`) so `npm run lint` is non-interactive and CI-safe
+- Hardened dashboard rendering by forcing dynamic behavior at layout level to avoid build-time DB coupling
+- Implemented DOCX export support for Ticket Note from the ticket details export tab
+- Updated export API to support markdown JSON response and DOCX binary download response
 
 ## Completed Components
 
@@ -102,7 +109,7 @@ The MSP Ops Dashboard is a personal operations dashboard application for IT Infr
 5. **Task Management** - Priority-based task tracking
 6. **Code Snippets** - Reusable code blocks
 7. **Reporting** - Weekly/quarterly analytics
-8. **Export Templates** - Markdown-based document generation
+8. **Export Templates** - Markdown preview + DOCX ticket-note export
 9. **Multi-Client Support** - 30+ client environments
 10. **13 Technology Pillars** - Azure, AD, SQL, DevOps, etc.
 
@@ -252,7 +259,6 @@ After running `npx prisma db seed`:
 - Single user (admin only)
 - Stub AI provider (placeholder for future)
 - No evidence file uploads yet
-- No DOCX export yet
 - No background jobs
 - No dark mode
 
@@ -260,7 +266,7 @@ After running `npx prisma db seed`:
 
 - [ ] AI Draft Helper
 - [ ] Evidence upload with drag-and-drop
-- [ ] DOCX export
+- [x] DOCX export (Ticket Note)
 - [ ] Full-text search (Meilisearch)
 - [ ] Background job queue (BullMQ)
 - [ ] Multi-user with RBAC
@@ -313,8 +319,8 @@ For build verification issues:
 
 ---
 
-**Project Status**: READY FOR BUILD VERIFICATION
+**Project Status**: BUILD VERIFIED / ENHANCEMENT IN PROGRESS
 
 **Last Updated**: 2026-02-06  
-**Prepared By**: Claude Opus 4.6  
-**Next Review**: After build verification completes
+**Prepared By**: Codex  
+**Next Review**: After evidence upload phase completion

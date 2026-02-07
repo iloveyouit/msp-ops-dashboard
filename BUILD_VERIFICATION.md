@@ -2,6 +2,13 @@
 
 This document provides a comprehensive checklist for verifying that the MSP Ops Dashboard project is ready for build, deployment, and launch.
 
+## Latest Verification Snapshot (2026-02-06)
+
+- `npm run lint`: PASS (non-interactive ESLint config committed)
+- `npm run build`: PASS
+- Build-time Prisma failures mitigated by forcing dynamic dashboard rendering
+- Export flow now includes DOCX generation for Ticket Note
+
 ## Pre-Build Verification
 
 ### Project Structure
@@ -117,7 +124,7 @@ npm run dev
 
 Expected:
 
-- Development server starts on http://localhost:3000
+- Development server starts on http://localhost:3000 (or http://localhost:3001 if 3000 is occupied)
 - No build warnings in console
 - Can navigate to login page
 - Can login with admin credentials

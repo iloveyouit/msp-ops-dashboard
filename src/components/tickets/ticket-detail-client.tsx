@@ -39,6 +39,7 @@ export function TicketDetailClient({ ticket: initialTicket, pillars, clients }: 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [exporting, setExporting] = useState(false);
   const [exportResult, setExportResult] = useState('');
+  const [exportError, setExportError] = useState('');
 
   const handleStatusChange = async (status: string) => {
     const res = await fetch(`/api/tickets/${ticket.id}`, {
@@ -104,17 +105,39 @@ export function TicketDetailClient({ ticket: initialTicket, pillars, clients }: 
     router.refresh();
   };
 
-  const handleExport = async (templateType: string) => {
+  const handleExport = async (templateType: string, format: 'markdown' | 'docx' = 'markdown') => {
     setExporting(true);
+    setExportError('');
     const res = await fetch('/api/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticketId: ticket.id, templateType }),
+      body: JSON.stringify({ ticketId: ticket.id, templateType, format }),
     });
-    if (res.ok) {
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Export failed' }));
+      setExportError(err.error || 'Export failed');
+      setExporting(false);
+      return;
+    }
+
+    if (format === 'docx') {
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="(.+?)"/);
+      const filename = match?.[1] || `${ticket.externalId || ticket.id}.docx`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } else {
       const data = await res.json();
       setExportResult(data.markdown);
     }
+
     setExporting(false);
   };
 
@@ -458,14 +481,23 @@ export function TicketDetailClient({ ticket: initialTicket, pillars, clients }: 
                       key={type}
                       variant="outline"
                       size="sm"
-                      onClick={() => handleExport(type)}
+                      onClick={() => handleExport(type, 'markdown')}
                       disabled={exporting}
                     >
-                      <Download className="h-4 w-4 mr-1" />
+                      <FileText className="h-4 w-4 mr-1" />
                       {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </Button>
                   ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExport('ticket_note', 'docx')}
+                    disabled={exporting}
+                  >
+                    <Download className="h-4 w-4 mr-1" /> Ticket Note DOCX
+                  </Button>
                 </div>
+                {exportError && <p className="text-sm text-red-600 mb-3">{exportError}</p>}
                 {exportResult && (
                   <div className="mt-4">
                     <div className="flex justify-between items-center mb-2">

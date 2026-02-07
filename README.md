@@ -11,7 +11,7 @@ A personal operations dashboard for IT Infrastructure Consultants at managed ser
 - **Tasks & Follow-ups** — Track to-dos with priorities, due dates, and client associations
 - **Code Snippets** — Reusable PowerShell, Terraform, CLI, SQL snippets with one-click copy
 - **Reporting** — Weekly/quarterly reports with breakdowns by pillar, client, and priority
-- **Export Templates** — Markdown exports for ticket notes, handoff docs, change plans, and PIRs
+- **Export Templates** — Markdown preview exports plus DOCX download for ticket notes
 - **Multi-Client Support** — Track work across 30+ client environments (Azure, on-prem, hybrid)
 - **13 Technology Pillars** — Azure, Entra ID, AD DS, Windows Server, VMware, Networking, Security/SOC, SQL, DevOps, Automation, Backups/DR, Certificates/TLS, Monitoring
 
@@ -112,6 +112,7 @@ A personal operations dashboard for IT Infrastructure Consultants at managed ser
    ```
 
 7. **Open:** [http://localhost:3000](http://localhost:3000)
+   - If port 3000 is in use, Next.js commonly starts at [http://localhost:3001](http://localhost:3001)
 
 ## Project Structure
 
@@ -155,6 +156,7 @@ msp-ops-dashboard/
 │   │   ├── utils.ts           # Helpers, constants, colors
 │   │   ├── validations.ts     # Zod schemas
 │   │   ├── export.ts          # Template engine
+│   │   ├── docx-export.ts     # Markdown-to-DOCX builder
 │   │   └── redact.ts          # Sensitive data redaction
 │   └── hooks/
 │       └── use-keyboard-shortcut.ts
@@ -254,11 +256,20 @@ npm install
 
 - [ ] AI Draft Helper (structured resolution from notes, KB article drafts)
 - [ ] Evidence upload with drag-and-drop
-- [ ] DOCX export (via docx library)
+- [x] DOCX export (ticket note download implemented)
 - [ ] Full-text search upgrade (Meilisearch)
 - [ ] Background job queue (BullMQ/Redis)
 - [ ] Multi-user support with role-based access
 - [ ] Dark mode
+
+## Current State (2026-02-06)
+
+- Build is passing (`npm run build`)
+- Linting is configured and passing (`npm run lint`)
+- Dashboard routes are forced dynamic to avoid build-time Prisma failures when DB is unavailable
+- Ticket export supports:
+  - Markdown preview for all templates
+  - DOCX download for Ticket Note
 
 ## License
 
