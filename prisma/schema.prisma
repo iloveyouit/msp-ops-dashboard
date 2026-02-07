@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  role          String   @default("admin")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tickets       Ticket[]
+  tasks         Task[]
+  kbArticles    KBArticle[]
+  snippets      Snippet[]
+}
+
+model Client {
+  id           String   @id @default(cuid())
+  name         String
+  acronym      String   @unique
+  notes        String?  @db.Text
+  envType      String   @default("hybrid") // azure, on-prem, hybrid
+  envTags      String[] @default([])
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tickets      Ticket[]
+  tasks        Task[]
+  kbArticles   KBArticle[]
+}
+
+model TechnologyPillar {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  icon        String?
+  color       String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tickets     TicketPillar[]
+  kbArticles  KBArticlePillar[]
+  snippets    SnippetPillar[]
+}
+
+model Ticket {
+  id               String    @id @default(cuid())
+  externalId       String?
+  title            String
+  description      String?   @db.Text
+  category         String    @default("incident") // incident, service_request, problem, change
+  priority         String    @default("medium") // critical, high, medium, low
+  status           String    @default("open") // open, in_progress, waiting, resolved, closed
+  sensitivity      String    @default("internal") // internal, client_shareable
+
+  impactedService  String?
+  affectedUsers    Int?
+  isOutage         Boolean   @default(false)
+  symptoms         String?   @db.Text
+  quickNotes       String?   @db.Text
+
+  // Timeline (auto-populated on status change)
+  detectedAt       DateTime?
+  acknowledgedAt   DateTime?
+  mitigatedAt      DateTime?
+  resolvedAt       DateTime?
+  closedAt         DateTime?
+
+  clientId         String
+  client           Client    @relation(fields: [clientId], references: [id])
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  resolution       Resolution?
+  pillars          TicketPillar[]
+  tags             TicketTag[]
+  tasks            Task[]
+  evidence         Evidence[]
+  docArtifacts     DocArtifact[]
+  kbArticles       KBArticle[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model TicketPillar {
+  ticketId  String
+  ticket    Ticket           @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  pillarId  String
+  pillar    TechnologyPillar @relation(fields: [pillarId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, pillarId])
+}
+
+model TicketTag {
+  id        String @id @default(cuid())
+  ticketId  String
+  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  tag       String
+
+  @@index([tag])
+}
+
+model Resolution {
+  id               String  @id @default(cuid())
+  summary          String  @db.Text
+  rootCause        String? @db.Text
+  fixApplied       String? @db.Text
+  validationSteps  String? @db.Text
+  prevention       String? @db.Text
+  timeSpentMinutes Int?
+  collaborators    String?
+  handoffNotes     String? @db.Text
+
+  ticketId         String  @unique
+  ticket           Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Evidence {
+  id           String   @id @default(cuid())
+  fileName     String
+  fileType     String
+  filePath     String
+  fileSize     Int?
+  shaHash      String?
+  source       String?  // screenshot, log, email, paste
+  notes        String?  @db.Text
+
+  ticketId     String?
+  ticket       Ticket?  @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  kbArticleId  String?
+  kbArticle    KBArticle? @relation(fields: [kbArticleId], references: [id], onDelete: SetNull)
+
+  uploadedAt   DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+model DocArtifact {
+  id           String   @id @default(cuid())
+  type         String   // ticket_note, handoff_doc, change_plan, pir
+  title        String
+  content      String   @db.Text
+  format       String   @default("markdown") // markdown, docx
+  filePath     String?
+  sensitivity  String   @default("internal")
+
+  ticketId     String?
+  ticket       Ticket?  @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model KBArticle {
+  id           String   @id @default(cuid())
+  title        String
+  problem      String   @db.Text
+  environment  String?
+  symptoms     String?  @db.Text
+  cause        String?  @db.Text
+  resolution   String   @db.Text
+  commands     String?  @db.Text
+  references   String?  @db.Text
+  sensitivity  String   @default("internal")
+
+  tags         KBTag[]
+  pillars      KBArticlePillar[]
+  evidence     Evidence[]
+
+  ticketId     String?
+  ticket       Ticket?  @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  clientId     String?
+  client       Client?  @relation(fields: [clientId], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
+model KBArticlePillar {
+  kbArticleId String
+  kbArticle   KBArticle        @relation(fields: [kbArticleId], references: [id], onDelete: Cascade)
+  pillarId    String
+  pillar      TechnologyPillar @relation(fields: [pillarId], references: [id], onDelete: Cascade)
+
+  @@id([kbArticleId, pillarId])
+}
+
+model KBTag {
+  id          String    @id @default(cuid())
+  kbArticleId String
+  kbArticle   KBArticle @relation(fields: [kbArticleId], references: [id], onDelete: Cascade)
+  tag         String
+
+  @@index([tag])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  status      String    @default("todo") // todo, in_progress, done, blocked
+  priority    String    @default("medium")
+  dueDate     DateTime?
+  category    String    @default("follow_up") // follow_up, monitoring, client_action, internal
+
+  ticketId    String?
+  ticket      Ticket?   @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  clientId    String?
+  client      Client?   @relation(fields: [clientId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([userId])
+}
+
+model Snippet {
+  id          String   @id @default(cuid())
+  title       String
+  language    String   // powershell, terraform, bash, sql, python, cli
+  code        String   @db.Text
+  description String?  @db.Text
+  usageNotes  String?  @db.Text
+  tags        String[] @default([])
+
+  pillars     SnippetPillar[]
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SnippetPillar {
+  snippetId String
+  snippet   Snippet          @relation(fields: [snippetId], references: [id], onDelete: Cascade)
+  pillarId  String
+  pillar    TechnologyPillar @relation(fields: [pillarId], references: [id], onDelete: Cascade)
+
+  @@id([snippetId, pillarId])
+}
+
+model ExportTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  type      String   // ticket_note, handoff, change_plan, pir
+  content   String   @db.Text
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
+}
